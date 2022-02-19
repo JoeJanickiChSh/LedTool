@@ -181,7 +181,7 @@ def main():
 
     with dpg.window(label="Animation", width=300):
         led_count_id = dpg.add_input_int(label="LED Count", min_value=0,
-                                         max_value=255, default_value=30, callback=set_led_count)
+                                         max_value=2048, default_value=30, callback=set_led_count)
         color_1_start_id = dpg.add_color_edit(label="Start LED 1", no_alpha=True,
                                               callback=set_start_led1)
         color_1_end_id = dpg.add_color_edit(label="End LED 1", no_alpha=True,
