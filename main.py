@@ -29,6 +29,8 @@ mode_id = 0
 
 frame = 0
 
+output_id = 0
+
 
 def rgb_to_hsv(v):
     color_tuple = (v.x, v.y, v.z)
@@ -96,65 +98,14 @@ def set_led_count(id, value):
     led_count = value
 
 
-def save_animation():
-    out_file = easygui.filesavebox(
-        default='animations/*.json', filetypes=['*.json', '*.*'])
-
-    out_frames = []
-    for j in range(32):
-        out_colors = []
-        for i in range(led_count):
-            color = get_led_color(i, led_count, j)
-            out_colors.append([color.x, color.y, color.z])
-        out_frames.append(out_colors)
-
-    colors = {
-        'start1': [led_start1.x, led_start1.y, led_start1.z],
-        'end1': [led_end1.x, led_end1.y, led_end1.z],
-        'start2': [led_start2.x, led_start2.y, led_start2.z],
-        'end2': [led_end2.x, led_end2.y, led_end2.z],
-    }
-    out_dict = {'frames': out_frames, 'hsv': use_hsv,
-                'leds': led_count, 'colors': colors}
-
-    if out_file is not None:
-        with open(out_file, 'w') as fp:
-            fp.write(json.dumps(out_dict, indent=2))
-
-
-def mul_list(l, amount):
-    return [l[0]*amount, l[1]*amount, l[2]*amount]
-
-
-def load_animation():
-    global led_count, led_start1, led_start2, led_end1, led_end2, use_hsv
-    in_file = easygui.fileopenbox(
-        default='animations/*.json', filetypes=['*.json', '*.*'])
-    if in_file is not None:
-        with open(in_file, 'r') as fp:
-            in_dict = json.loads(fp.read())
-
-        led_count = in_dict['leds']
-        led_start1 = Vector(in_dict['colors']['start1'][0],
-                            in_dict['colors']['start1'][1], in_dict['colors']['start1'][2])
-        led_start2 = Vector(in_dict['colors']['start2'][0],
-                            in_dict['colors']['start2'][1], in_dict['colors']['start2'][2])
-        led_end1 = Vector(in_dict['colors']['end1'][0],
-                          in_dict['colors']['end1'][1], in_dict['colors']['end1'][2])
-        led_end2 = Vector(in_dict['colors']['end2'][0],
-                          in_dict['colors']['end2'][1], in_dict['colors']['end2'][2])
-        use_hsv = in_dict['hsv']
-
-        dpg.set_value(led_count_id, led_count)
-        dpg.set_value(color_1_start_id, mul_list(
-            in_dict['colors']['start1'], 255))
-        dpg.set_value(color_2_start_id, mul_list(
-            in_dict['colors']['start2'], 255))
-        dpg.set_value(color_1_end_id, mul_list(
-            in_dict['colors']['end1'], 255))
-        dpg.set_value(color_2_end_id, mul_list(
-            in_dict['colors']['end2'], 255))
-        dpg.set_value(mode_id, 'HSV' if use_hsv else 'RGB')
+def set_output():
+    startA = f'{led_start1.x},{led_start1.y},{led_start1.z}'
+    startB = f'{led_start2.x},{led_start2.y},{led_start2.z}'
+    endA = f'{led_end1.x},{led_end1.y},{led_end1.z}'
+    endB = f'{led_end2.x},{led_end2.y},{led_end2.z}'
+    hsv_string = 'true' if use_hsv else 'false'
+    out_str = f'new LightAnimation(\nnew Color({startA}), new Color({startB}), \nnew Color({endA}), new Color({endB}), \n{hsv_string})'
+    dpg.set_value(output_id, out_str)
 
 
 def animate():
@@ -170,7 +121,7 @@ anim_thread.start()
 
 
 def main():
-    global led_count_id, color_1_end_id, color_1_start_id, color_2_end_id, color_2_start_id, mode_id
+    global led_count_id, color_1_end_id, color_1_start_id, color_2_end_id, color_2_start_id, mode_id, output_id
     dpg.create_context()
     dpg.create_viewport(title='LED Animation Tool')
     dpg.setup_dearpygui()
@@ -198,10 +149,9 @@ def main():
         for i in range(16):
             leds.append(dpg.add_color_button())
 
-    with dpg.window(label="File", pos=(0, 300)):
-        dpg.add_button(label="Save", callback=save_animation)
-        dpg.add_button(label="Load", callback=load_animation)
-
+    with dpg.window(label="Output", pos=(0, 300)):
+        dpg.add_button(label='Generate', callback=set_output)
+        output_id = dpg.add_input_text(multiline=True, width=300)
     with dpg.theme() as global_theme:
 
         with dpg.theme_component(dpg.mvAll):
